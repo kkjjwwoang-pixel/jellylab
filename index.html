@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f7f2" />
+    <meta name="description" content="Soft Matter — an interactive study in light, elasticity, and the pleasure of play. Touch a living digital material." />
+    <title>Soft Matter — A material in motion</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#material-controls">Skip to material controls</a>
+    <main class="experiment" id="experiment">
+      <div class="viewport" id="viewport" aria-label="Interactive translucent jelly sculpture"></div>
+      <div class="scene-loading" id="scene-loading" role="status" aria-label="Loading jelly"><span></span></div>
+      <div class="render-error" id="render-error" hidden><h2>A little more graphics power.</h2><p>This experiment needs WebGPU or WebGL 2. Enable hardware acceleration in your browser and try again.</p><button onclick="location.reload()">Try again ↗</button></div>
+
+      <header class="masthead">
+        <a href="./" class="wordmark" aria-label="Slimy home"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3C20 3 20 9 23 9S29 10 29 15s-5 6-7 8-1 6-6 6-5-5-8-6-5-4-5-8 4-6 7-6 2-6 6-6Z" stroke="currentColor" stroke-width="1.4"/><path d="M10 12c4-3 9-2 12 3s-1 9-6 8-10-7-6-11Z" stroke="currentColor" stroke-width="1.1"/></svg>Slimy</a>
+      </header>
+
+      <h1 class="sr-only">Slimy</h1>
+
+      <aside class="material-panel" id="material-controls" aria-label="Material controls">
+        <div class="panel-heading"><h2>Material</h2></div>
+        <div class="model-controls">
+          <input id="model-file" type="file" accept=".glb,model/gltf-binary" hidden />
+          <button class="model-upload" id="model-upload" disabled title="GLB · 최대 25MB"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 10V2m-3 3 3-3 3 3M3 10v3h10v-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="model-upload-label">Upload GLB</span></button>
+          <button class="model-clear" id="model-clear" hidden aria-label="기본 젤리로 돌아가기" title="기본 젤리로 돌아가기">×</button>
+          <p class="model-message" id="model-message" role="status" aria-live="polite" hidden></p>
+        </div>
+        <fieldset class="palette"><legend>Choose a material</legend>
+          <button class="swatch selected" data-palette="rose" aria-pressed="true" aria-label="Rose material"><span style="--swatch:#bd4767"></span>Rose</button>
+          <button class="swatch" data-palette="jade" aria-pressed="false" aria-label="Jade material"><span style="--swatch:#648f7c"></span>Jade</button>
+          <button class="swatch" data-palette="amber" aria-pressed="false" aria-label="Amber material"><span style="--swatch:#c4964a"></span>Amber</button>
+        </fieldset>
+        <div class="slider-field"><label for="softness">Softness <output id="softness-value" for="softness">68<span>%</span></output></label><input id="softness" type="range" min="0" max="100" value="68" /></div>
+        <div class="slider-field second"><label for="clarity">Clarity <output id="clarity-value" for="clarity">76<span>%</span></output></label><input id="clarity" type="range" min="15" max="100" value="76" /></div>
+        <div class="panel-actions"><button class="nudge-button" id="nudge"><span class="nudge-icon" aria-hidden="true">↗</span>Nudge</button><button class="reset-button" id="reset" aria-label="Reset the experiment" title="Reset the experiment">↺</button><button class="reset-button" id="pause" aria-pressed="false" aria-label="Pause motion" title="Pause motion"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2v8M8 2v8" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      </aside>
+
+      <footer class="footer">
+        <div class="interaction-note">Drag · Click · Scroll</div>
+        <button class="scroll-note" id="morph" aria-label="Morph jelly shape"><span class="scroll-arrow" aria-hidden="true">↓</span></button>
+        <div class="sr-only" aria-live="polite"><span id="renderer-status">WARMING UP</span><span id="motion-status">LIVE</span></div>
+      </footer>
+    </main>
+
+    <dialog id="about-dialog" aria-labelledby="about-title">
+      <button class="dialog-close" id="about-close" aria-label="Close about the experiment">×</button>
+      <h2 id="about-title">Controls</h2>
+      <dl><div><dt>Drag</dt><dd>Stretch, peel, and roll.</dd></div><div><dt>Click</dt><dd>Squish the jelly.</dd></div><div><dt>Scroll</dt><dd>Change its shape.</dd></div><div><dt>Keyboard</dt><dd>Space: nudge · Arrows: stretch · R: reset</dd></div></dl>
+    </dialog>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

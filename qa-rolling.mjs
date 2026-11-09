@@ -1,0 +1,67 @@
+import { chromium } from 'file:///C:/Users/kkjjw/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const reports=[];mkdirSync('qa/rolling',{recursive:true});
+try {
+ for(const backend of ['webgpu','webgl']) {
+  const page=await browser.newPage({viewport:{width:1440,height:960}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto(`http://127.0.0.1:5176/${backend==='webgl'?'?webgl':''}`,{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>window.__softMatter?.state.ready);
+  await page.waitForTimeout(400);
+  await page.screenshot({path:`qa/rolling/${backend}-rest.png`});
+  await page.mouse.move(795,465);await page.mouse.down();
+  await page.mouse.move(818,448,{steps:5});await page.waitForTimeout(350);
+  const small=await page.evaluate(()=>window.__softMatter.state);
+  assert.ok(Math.abs(small.orientation[3])>.995,'small pull should not rotate whole body');
+  await page.mouse.move(805,230,{steps:24});await page.waitForTimeout(1100);
+  const bonded=await page.evaluate(()=>window.__softMatter.state);
+  await page.screenshot({path:`qa/rolling/${backend}-bonded.png`});
+  assert.equal(bonded.attached,true,'medium pull stays bonded instead of creeping off the floor');
+  assert.ok(Math.hypot(...bonded.grab)>1.5,'bonded gel visibly stretches beyond the former cap');
+  assert.ok(Math.hypot(bonded.bodyPosition[0],bonded.bodyPosition[2])<.01);
+  await page.mouse.move(1030,170,{steps:30});await page.waitForTimeout(600);
+  await page.screenshot({path:`qa/rolling/${backend}-pull.png`});
+  const tilted=await page.evaluate(()=>window.__softMatter.state);
+  assert.equal(tilted.attached,false,'strong pull releases the ground adhesion');
+  assert.ok(Math.abs(tilted.orientation[3])<.97,'large pull should visibly rotate');
+  await page.mouse.move(970,40,{steps:12});await page.waitForTimeout(900);
+  const pulled=await page.evaluate(()=>window.__softMatter.state);
+  await page.screenshot({path:`qa/rolling/${backend}-lift.png`});
+  console.log(backend,'lift',JSON.stringify({position:pulled.bodyPosition,orientation:pulled.orientation,clearance:pulled.clearance}));
+  assert.ok(pulled.clearance>.05,'upward pull should lift');
+  await page.mouse.up();await page.mouse.move(480,790);
+  await page.waitForTimeout(450);await page.screenshot({path:`qa/rolling/${backend}-release.png`});
+  const released=await page.evaluate(()=>window.__softMatter.state);
+  await page.waitForTimeout(4000);await page.screenshot({path:`qa/rolling/${backend}-settled.png`});
+  const settled=await page.evaluate(()=>window.__softMatter.state);
+  assert.equal(settled.dragging,false);assert.ok(settled.clearance<.1);
+  assert.ok(Math.hypot(...settled.grab)<.02);
+  assert.ok(Math.hypot(...settled.angularVelocity)<.4,'released body should settle');
+  // A second grip after rolling must use the transformed picking surface.
+  await page.locator('#reset').click();await page.waitForTimeout(500);
+  await page.mouse.move(785,460);await page.mouse.down();
+  await page.mouse.move(570,465,{steps:24});await page.waitForTimeout(650);
+  const resisted=await page.evaluate(()=>window.__softMatter.state);
+  assert.equal(resisted.attached,true,'the former 215px release distance must stay bonded');
+  assert.ok(Math.abs(resisted.orientation[3])>.999);
+  await page.screenshot({path:`qa/rolling/${backend}-sideways-bonded.png`});
+  await page.mouse.move(400,465,{steps:20});await page.waitForTimeout(900);
+  const sideways=await page.evaluate(()=>window.__softMatter.state);
+  await page.screenshot({path:`qa/rolling/${backend}-sideways.png`});
+  assert.ok(Math.abs(sideways.orientation[3])<.98,'horizontal pull should tip/roll');
+  await page.mouse.up();
+  await page.locator('#pause').click();const paused=await page.evaluate(()=>window.__softMatter.state);
+  await page.waitForTimeout(200);const still=await page.evaluate(()=>window.__softMatter.state);
+  assert.deepEqual(still.orientation,paused.orientation);
+  await page.locator('#reset').click();await page.waitForTimeout(300);
+  const reset=await page.evaluate(()=>window.__softMatter.state);
+  assert.ok(Math.abs(reset.orientation[3])>.999);
+  assert.equal(errors.length,0);
+  assert.equal(settled.attached,true,'the released gel must re-bond after settling');
+  reports.push({backend,small,bonded,tilted,pulled,released,settled,resisted,sideways,errors});await page.close();
+ }
+ console.log(JSON.stringify(reports,null,2));
+} finally {writeFileSync('qa/rolling/report.json',JSON.stringify(reports,null,2));await browser.close();}
